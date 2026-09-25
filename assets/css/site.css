@@ -1,0 +1,514 @@
+@charset "UTF-8";
+/* ============================================================================
+   时间小包 官网样式表
+   ----------------------------------------------------------------------------
+   设计语言直接抄 App 的莫兰迪纯色体系：
+     · 页面底色是纯色灰，不用渐变、不用光斑；
+     · 卡片是白底 + 1px 淡描边，靠线而不是靠阴影分层；
+     · 圆角只有 14 / 12 / 10 三档，和 App 的 radius_card / radius_button /
+       radius_input 一一对应；
+     · 强调色是莫兰迪灰蓝 #7D8CA3，不出现高饱和的跳色。
+   唯一的例外是底部悬浮按钮的投影 —— 它浮在滚动内容之上，没有投影就会和
+   下面滚过去的文字糊在一起。这一处是有理由的破例。
+
+   ⚠ 字体只声明回退栈，不嵌入任何字体文件。
+     栈首是 Noto Sans CJK SC —— 它既是 Android 系统的中文默认（和截图里的字完全一致），
+     也是多数 Linux 发行版自带的中文字体；后面依次是 macOS 的苹方、Windows 的微软雅黑。
+   ========================================================================== */
+
+/* ===================== 设计令牌 ===================== */
+:root {
+  --font: "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --bg: #F2F2F2;
+  --bg-a: rgba(242, 242, 242, .88);
+  --surface: #FFFFFF;
+  --surface-sunken: #FAFAFA;
+  --surface-pressed: #F5F5F5;
+  --stroke: #E8E8E8;
+  --stroke-soft: #EEEEEE;
+  --stroke-strong: #DDDDDD;
+
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --text-on-accent: #FFFFFF;
+
+  --accent: #7D8CA3;
+  --accent-deep: #6B7A90;
+  --accent-tint: #E9EDF1;
+  --accent-tint-pressed: #DCE3EA;
+
+  --toast-bg: #333333;
+  --toast-fg: #FFFFFF;
+
+  --radius-card: 14px;
+  --radius-button: 12px;
+  --radius-input: 10px;
+  --radius-chip: 12px;
+
+  --app-width: 460px;
+  --page-pad: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1A1A1D;
+    --bg-a: rgba(26, 26, 29, .88);
+    --surface: #232327;
+    --surface-sunken: #1E1E22;
+    --surface-pressed: #2D2D32;
+    --stroke: #34343A;
+    --stroke-soft: #2B2B31;
+    --stroke-strong: #41414A;
+
+    --text-primary: #E8E8EC;
+    --text-secondary: #A6A6AE;
+    --text-tertiary: #73737C;
+    --text-on-accent: #14161A;
+
+    --accent: #9CAFC6;
+    --accent-deep: #8AA0BA;
+    --accent-tint: #262C33;
+    --accent-tint-pressed: #2F3740;
+
+    --toast-bg: #E8E8EC;
+    --toast-fg: #14161A;
+  }
+}
+
+/* ===================== 基础 ===================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img { max-width: 100%; height: auto; }
+
+a { color: var(--accent-deep); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 图标统一走页内雪碧图：fill 取 currentColor，跟着文字色走 */
+.ico { width: 24px; height: 24px; fill: currentColor; flex: none; }
+.ico-sm { width: 16px; height: 16px; }
+.ico-xs { width: 13px; height: 13px; vertical-align: -1px; margin-left: 2px; }
+
+/* ===================== 页面骨架 ===================== */
+/*
+  宽屏时：中央一列「手机宽度」的主内容，左侧挂二维码卡片。
+  justify-content: center 让 [二维码 + 主内容] 这个整体居中 ——
+  二维码占了左边，主内容自然就偏到中线的右边去了，正是需求里要的效果。
+*/
+.stage {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 var(--page-pad);
+}
+
+.app {
+  flex: 1 1 auto;
+  max-width: var(--app-width);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--page-pad);
+}
+
+.aside { display: none; }
+
+/* 1000px 是个折中点：再窄，二维码（236px + 间距）会把主内容挤到 400px 以下，
+   「手机宽度」的前提就不成立了。 */
+@media (min-width: 1000px) {
+  .stage { gap: 44px; padding: 0 24px; }
+  .app { flex: 0 0 var(--app-width); }
+  .aside {
+    display: block;
+    flex: none;
+    width: 236px;
+    /* 顶栏是 sticky top:0，二维码从它底下露出来 */
+    position: sticky;
+    top: 76px;
+  }
+}
+
+/* ===================== 顶栏 ===================== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 56px;
+  margin: 0 calc(0px - var(--page-pad));
+  padding: 0 var(--page-pad);
+  background: var(--bg-a);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--stroke-soft);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+.brand:hover { text-decoration: none; }
+.brand-icon { width: 28px; height: 28px; border-radius: 8px; display: block; }
+
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.home-link:hover {
+  text-decoration: none;
+  background: var(--surface-pressed);
+  color: var(--text-primary);
+}
+
+/* ===================== 品牌区 ===================== */
+.hero {
+  margin-top: 8px;
+  padding: 32px 20px 28px;
+  background: var(--accent-tint);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.hero-icon {
+  display: block;
+  width: 112px;
+  height: 112px;
+  margin: 0 auto;
+  /* App 图标原图是满幅方形，网页里按应用图标的比例切圆角 */
+  border-radius: 26px;
+}
+
+.hero-name {
+  margin: 16px 0 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: .5px;
+}
+
+.hero-tagline {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.chip {
+  padding: 3px 10px;
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+  color: var(--accent-deep);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 200px;
+  height: 48px;
+  margin-top: 20px;
+  padding: 0 24px;
+  border-radius: var(--radius-button);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: 16px;
+  font-weight: 600;
+}
+.cta:hover { text-decoration: none; background: var(--accent-deep); }
+.cta:active { background: var(--accent-deep); }
+
+.hero-note {
+  margin: 10px 0 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+/* ===================== 通用分节 ===================== */
+.section { margin-top: 28px; }
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.group-title {
+  margin: 16px 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+}
+.group-title:first-of-type { margin-top: 0; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-card);
+}
+
+.prose { padding: 16px; }
+.prose p { margin: 0; color: var(--text-secondary); }
+.prose p + p { margin-top: 10px; }
+
+/* ===================== 截图 ===================== */
+/*
+  横向滚动 + 滚动对齐。
+  负 margin 把滚动区撑到主内容列的边缘，图片因此能一直滑到屏幕边再切掉 ——
+  这是应用商店截图条的通行观感；不加负 margin 的话，两侧会各留一道死白。
+*/
+.shots {
+  display: flex;
+  gap: 12px;
+  margin: 0 calc(0px - var(--page-pad));
+  padding: 4px var(--page-pad) 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.shots::-webkit-scrollbar { display: none; }
+
+.shot { flex: none; margin: 0; scroll-snap-align: center; }
+.shot img {
+  display: block;
+  width: 216px;
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.shots-hint {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+@media (min-width: 1000px) { .shots-hint { display: none; } }
+
+/* ===================== 功能列表 ===================== */
+.list { margin: 0; padding: 0; list-style: none; overflow: hidden; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 16px;
+}
+.row + .row { border-top: 1px solid var(--stroke-soft); }
+
+.row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-button);
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+}
+
+.row-text { display: flex; flex-direction: column; min-width: 0; }
+.row-name { font-size: 15px; line-height: 1.45; }
+.row-desc { color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; }
+
+/* ===================== 特性 ===================== */
+.points {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 560px) { .points { grid-template-columns: 1fr 1fr; } }
+
+.point {
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-card);
+}
+.point-title { margin: 0; font-size: 15px; font-weight: 700; }
+.point p { margin: 6px 0 0; color: var(--text-secondary); font-size: 13px; }
+
+/* ===================== 应用信息 ===================== */
+.facts { margin: 0; padding: 0; overflow: hidden; }
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 16px;
+}
+.fact + .fact { border-top: 1px solid var(--stroke-soft); }
+.fact dt { color: var(--text-secondary); font-size: 13px; flex: none; }
+.fact dd {
+  margin: 0;
+  font-size: 13.5px;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* ===================== 页脚 ===================== */
+.footer {
+  margin: 28px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--stroke);
+  text-align: center;
+}
+.footer p { margin: 0; color: var(--text-tertiary); font-size: 12px; }
+.footer-license { color: var(--text-secondary) !important; }
+.footer-copy { margin-top: 2px !important; }
+.footer-note { margin-top: 10px !important; line-height: 1.7; }
+
+/* ===================== 二维码卡片（仅大屏） ===================== */
+.qr-card {
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.qr { display: block; width: 180px; height: 180px; margin: 0 auto; }
+
+.qr-link {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: none;
+  color: var(--accent-deep);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.qr-link:hover { background: var(--accent-tint); }
+.qr-link-text { word-break: break-all; }
+
+.qr-hint { margin: 8px 0 0; color: var(--text-tertiary); font-size: 12px; }
+
+/* ===================== 底部常驻下载按钮 ===================== */
+/*
+  用 position: sticky 而不是 fixed：
+    sticky 的定位基准是它的父元素（主内容列），所以按钮天然和主内容列等宽，
+    窄屏 / 宽屏都不用再手算一次左右偏移；滚到内容末尾它还会自然落位，不压页脚。
+  外面那层 wrap 铺一条「由透明到页面底色」的渐变，让按钮下方滚过的内容淡出，
+  而不是被硬切一条边。wrap 本身 pointer-events: none，不挡任何点击。
+*/
+.fab-wrap {
+  position: sticky;
+  bottom: 0;
+  z-index: 25;
+  margin: 24px calc(0px - var(--page-pad)) 0;
+  padding: 16px var(--page-pad) calc(16px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, var(--bg) 58%, transparent);
+  pointer-events: none;
+}
+
+.fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border-radius: var(--radius-button);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+  pointer-events: auto;
+}
+.fab:hover { text-decoration: none; background: var(--accent-deep); }
+.fab:active { background: var(--accent-deep); }
+
+/* ===================== 复制提示 ===================== */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  z-index: 60;
+  max-width: 80vw;
+  padding: 9px 18px;
+  border-radius: 20px;
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  font-size: 13px;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+}
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===================== 无障碍 ===================== */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  .shots { scroll-behavior: auto; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
